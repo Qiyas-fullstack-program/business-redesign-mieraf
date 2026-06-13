@@ -1,19 +1,28 @@
 import { useState } from 'react';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useNavigate } from 'react-router-dom';
-import { Car } from 'lucide-react';           // ← Add this import
+import { Car } from 'lucide-react';
 import Button from '../../components/ui/Button';
 
 export default function Login() {
   const [username, setUsername] = useState('');
+  const [showToken, setShowToken] = useState(false);
+  const [generatedToken, setGeneratedToken] = useState('');
+  
   const login = useAuthStore((state) => state.login);
   const navigate = useNavigate();
 
   const handleLogin = (e) => {
     e.preventDefault();
     if (username.trim()) {
-      login(username);
-      navigate('/dashboard');
+      const token = login(username);
+      setGeneratedToken(token);
+      setShowToken(true);
+
+      // Auto redirect after 1.5 seconds
+      setTimeout(() => {
+        navigate('/dashboard', { replace: true });
+      }, 1500);
     }
   };
 
@@ -36,7 +45,7 @@ export default function Login() {
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               className="w-full px-5 py-4 border border-gray-300 rounded-2xl focus:outline-none focus:border-primary-500"
-              placeholder="Enter your username"
+              placeholder="Enter any username (e.g. mieraf)"
               required
             />
           </div>
@@ -46,8 +55,18 @@ export default function Login() {
           </Button>
         </form>
 
+        {showToken && generatedToken && (
+          <div className="mt-6 p-4 bg-gray-100 rounded-2xl text-xs break-all">
+            <p className="font-medium text-gray-700 mb-2">Generated JWT Token:</p>
+            <code>{generatedToken}</code>
+            <p className="text-[10px] text-gray-500 mt-3">
+              Copy this token and test it on <a href="https://jwt.io" target="_blank" className="text-blue-600">jwt.io</a>
+            </p>
+          </div>
+        )}
+
         <p className="text-center text-sm text-gray-500 mt-8">
-          Demo: Type any username (e.g. admin, dawit, etc.)
+          Demo Login — Any username works
         </p>
       </div>
     </div>

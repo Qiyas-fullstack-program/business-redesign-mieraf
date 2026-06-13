@@ -1,16 +1,36 @@
-import { Outlet, Link, useLocation, Navigate } from 'react-router-dom';
+import { Outlet, Navigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../../store/useAuthStore';
 import { Car, LayoutDashboard, Calendar, Users, Package, BarChart3, LogOut, Menu } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 export default function DashboardLayout() {
-  const { isLoggedIn, user, logout } = useAuthStore();
+  const { isLoggedIn, checkAuth, logout, user } = useAuthStore();
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);   // ← New
 
-  // Mock login if not logged in
+  // Check auth immediately when component mounts
+  useEffect(() => {
+    const authenticated = checkAuth();
+    setIsLoading(false);        // ← Important
+    console.log("Auth check result:", authenticated);
+  }, [checkAuth]);
+
+  // Show loading while checking auth
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-100">
+        <div className="text-center">
+          <div className="animate-spin w-10 h-10 border-4 border-primary-600 border-t-transparent rounded-full mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading dashboard...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Redirect if not logged in
   if (!isLoggedIn) {
-    return <Navigate to="/dashboard/login" replace />;
+    return <Navigate to="/dashboard/login" replace state={{ from: location }} />;
   }
 
   const navItems = [
@@ -46,18 +66,16 @@ export default function DashboardLayout() {
                              (item.path === "/dashboard" && location.pathname === "/dashboard");
               
               return (
-                <Link
+                <a
                   key={item.path}
-                  to={item.path}
+                  href={item.path}
                   className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
-                    isActive 
-                      ? 'bg-primary-600 text-white' 
-                      : 'hover:bg-gray-100 text-gray-700'
+                    isActive ? 'bg-primary-600 text-white' : 'hover:bg-gray-100 text-gray-700'
                   }`}
                 >
                   <Icon size={20} />
                   {sidebarOpen && <span>{item.label}</span>}
-                </Link>
+                </a>
               );
             })}
           </nav>
@@ -74,9 +92,8 @@ export default function DashboardLayout() {
         </div>
       </div>
 
-      {/* Main Content Area */}
+      {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Top Bar */}
         <header className="bg-white border-b px-8 py-4 flex items-center justify-between">
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}
@@ -87,16 +104,15 @@ export default function DashboardLayout() {
           
           <div className="flex items-center gap-4">
             <div className="text-right">
-              <p className="font-medium">Welcome back, {user?.username || "Owner"}</p>
-              <p className="text-sm text-gray-500">Manager</p>
+              <p className="font-medium">Welcome, {user?.username || "Admin"}</p>
+              <p className="text-sm text-gray-500">Owner</p>
             </div>
-            <div className="w-10 h-10 bg-primary-100 rounded-full flex items-center justify-center">
+            <div className="w-10 h-10 bg-primary-100 rounded-full flex items-center justify-center text-xl">
               👋
             </div>
           </div>
         </header>
 
-        {/* Page Content */}
         <main className="flex-1 overflow-auto p-8">
           <Outlet />
         </main>
